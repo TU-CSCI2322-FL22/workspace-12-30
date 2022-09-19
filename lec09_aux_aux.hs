@@ -41,9 +41,13 @@ betterGap2 lst = undefined
 
 
 hoursToSchedule :: [(Int, Int)] -> Int
-hoursToSchedule [] = 0
-hoursToSchedule ((h,m):tasks) = 
-  let hoursForTs = hoursToSchedule tasks
-  in hoursForTs + h + if m > 0 then 1 else 0
+hoursToSchedule tasks = aux 0 tasks
+  where aux minutesLeft [] = 0
+        aux minutesLeft ((h,m):tasks) = 
+          if m > minutesLeft
+          then let hoursForTs = aux (60+minutesLeft-m) tasks
+               in hoursForTs + h + 1
+          else let hoursForTs = aux (minutesLeft-m) tasks
+               in hoursForTs + h 
 
 
