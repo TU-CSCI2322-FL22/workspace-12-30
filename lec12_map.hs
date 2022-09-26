@@ -1,4 +1,4 @@
-add13, add7, add9, sub2 :: Int -> Int
+add13, add7, add9, sub2 :: Int -> In
 add13 x = x + 13
 add7 x = x + 7
 add9 x = x + 9
