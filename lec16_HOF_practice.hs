@@ -6,15 +6,26 @@
 -}
 
 -- 1. Define addPairs :: [(Int, Int)] -> [Int] to add the elements of each pair in a list.
+addPairs lst = map (\elem -> fst elem + snd elem) lst
+addPairs2 lst = map (\(a,b)-> a + b) lst
+addPairs3 lst = map addPair lst
+  where addPair (a,b) = a + b
 
 -- 2. Define prodList :: [Int] -> Int that finds the product of all elements.
+prodList lst = foldr (\x prodXs -> x * prodXs) 1 lst 
 
 -- 3. Define zeroDetector :: [Int] -> Bool to check if there is a zero in a list
   -- a. (Optional) Using a filter and built-in functions
 
   -- b. Using a fold
+zeroDetector [] = False
+zeroDetector (x:xs) = if x == 0 then True else zeroDetector xs
+
+zeroDetector2 lst = foldr (\x acc -> if x == 0 then True else acc) False lst
+zeroDetector3 lst = foldr (\x acc -> (x == 0) || acc) False lst
 
 -- 4. Using a fold, define positives :: [Int] -> [Int] that returns the positive elements.
+positives lst= foldr (\x positivesInXs -> if x > 0 then x:positivesInXs else positivesInXs ) [] lst
 
 -- 5. Using a fold, define range :: [Int] -> (Int,Int)
 
