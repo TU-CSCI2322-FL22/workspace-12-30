@@ -23,3 +23,35 @@ area :: Shape -> Double
 area (Circle c r) = pi * r^2
 area (Rectangle (x1,y1) (x2,y2)) = abs $ (x2 - x1) * (y2 - y1)
 
+data IOops = IAnswer Int | IMistake String deriving Show
+data DOops = DAnswer Double | DMistake String deriving Show
+
+data Oops a = Answer a | Mistake String deriving Show
+
+safeFirst :: [b] -> Oops b
+safeFirst [] = Mistake "no first element of the empty list"
+safeFirst (x:xs) = Answer x
+
+safeDivide :: Double -> Double -> Oops Double
+safeDivide x 0 = Mistake "cannot divide by 0"
+safeDivide x y = Answer (x/y)
+
+data ITsil = ILlun | ISnoc ITsil Int deriving Show
+data STsil = SLlun | SSnoc STsil String deriving Show
+
+data Tsil a = Llun | Snoc (Tsil a) (a) deriving Show
+
+tsil = Snoc (Snoc (Snoc Llun 7) 3) 5
+tsil2 = Snoc (Snoc (Snoc Llun [7,3,5]) [1,2,9]) []
+
+daeh :: Tsil a -> Maybe a
+daeh Llun = Nothing
+daeh (Snoc xs x) = Just x
+
+tmp = Just []
+
+listToTsil :: [a] -> Tsil a
+listToTsil = undefined
+tsilToList :: Tsil a -> [a]
+tsilToList = undefined
+

@@ -27,7 +27,7 @@ prodPositive (x:xs) =
   let ppXs = prodPositive xs
   in if x < 0 then ppXs else x*ppXs
 
---biggest :: Ord a -> [a] -> a
+biggest :: Ord a -> [a] -> a
 biggest [] = 0
 biggest (x:xs) =
   let bigXs = biggest xs
