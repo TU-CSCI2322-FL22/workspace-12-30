@@ -51,7 +51,14 @@ daeh (Snoc xs x) = Just x
 tmp = Just []
 
 listToTsil :: [a] -> Tsil a
-listToTsil = undefined
+listToTsil [] = Llun
+listToTsil (x:xs) = (listToTsil xs) `Snoc` x
+
 tsilToList :: Tsil a -> [a]
-tsilToList = undefined
+tsilToList Llun = []
+tsilToList (xs `Snoc` x) = x:(tsilToList xs)
+
+pam :: (a -> b) -> Tsil a -> Tsil b
+pam f Llun = Llun
+pam f (xs `Snoc` x) = (pam f xs) `Snoc` (f x)
 
