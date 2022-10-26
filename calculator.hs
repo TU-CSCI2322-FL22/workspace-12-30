@@ -1,3 +1,4 @@
+import Text.Read
 import Debug.Trace
 --This is un-inspectable, so we cannot derive show or pattern match our operators.
 --data Token = Number Double | Oper (Double -> Double -> Double) 
@@ -15,17 +16,27 @@ inputTwo = "* + 3 - 79 8 2"
 
 --tokensOne = [Minus, Plus, Number 3, Number 79, Mult, Number 8, Number 2]
 
-lexer :: String -> [Token]
-lexer str = map lexWord (words str)
-  where lexWord :: String -> Token
-        lexWord "+" = OpTok Plus
-        lexWord "-" = OpTok Minus
-        lexWord "*" = OpTok Mult
-        lexWord "/" = OpTok Div
-        lexWord str = 
-          if all (`elem` '.':['0'..'9']) str
-          then NumTok (read str)
-          else error $ "Invalid string in lexer: " ++ str
+lexer :: String -> Maybe [Token]
+lexer str = sequence $ map lexWord (words str)
+
+seqMaybe :: [Maybe a] -> Maybe [a]
+seqMaybe [] = Just []
+seqMaybe (x:xs) = 
+  case (x,seqMaybe xs) of
+    (Just val, Just xsVals) -> Just (val:xsVals)
+    _ -> Nothing
+
+lexWord :: String -> Maybe Token
+lexWord "+" = Just $ OpTok Plus
+lexWord "-" = Just $ OpTok Minus
+lexWord "*" = Just $ OpTok Mult
+lexWord "/" = Just $ OpTok Div
+lexWord str = applyMaybe NumTok (readMaybe str)
+
+applyMaybe :: (a -> b) -> Maybe a -> Maybe b
+applyMaybe f Nothing = Nothing
+applyMaybe f (Just x) = Just (f x)
+
 
 data Token = NumTok Double | OpTok Operator deriving (Eq, Show)
 data Operator  = Mult | Div | Plus | Minus deriving (Eq, Show)
@@ -41,24 +52,44 @@ exprSize :: Expr -> Int
 exprSize (NumE x) = 1
 exprSize (OpE op lft rgt) = 1 + exprSize lft + exprSize rgt
 
-parse :: [Token] -> Expr
-parse [] = error "Cannot parse the empty string"
-parse (NumTok x:ts) = {- traceShow (NumTok x:ts) $-} NumE x 
-parse (OpTok op:ts) = 
-  let lft = parse ts
-      rgt = parse (drop (exprSize lft) ts)
-  in OpE op lft rgt
-
---parse2 :: [Token] -> Expr
-parse2 [] = error "Cannot parse the empty string"
-parse2 toks = aux toks 
+unsafeParse :: [Token] -> Expr
+unsafeParse toks = 
+  case aux toks of
+    (expr, []) -> expr
+    (expr, toks) -> error $ "Too many tokens: " ++ show toks
   where aux :: [Token] -> (Expr, [Token])
+        aux [] = error "Cannot parse the empty string"
         aux (NumTok x:ts) = (NumE x, ts)
         aux (OpTok op:ts) = 
           let (lft, leftOvers) = aux ts
-              (rgt, rightOvers) = aux leftOvers
+              (rgt, rightOvers) =   aux leftOvers
           in (OpE op lft rgt, rightOvers)
 
+parse :: [Token] -> Maybe Expr
+parse toks = 
+  case aux toks of
+    Just (expr, []) -> Just expr
+    Just (expr, toks) -> Nothing -- error $ "Too many tokens: " ++ show toks
+    Nothing -> Nothing
+  where aux :: [Token] -> Maybe (Expr, [Token])
+        aux [] = Nothing -- error "Cannot parse the empty string"
+        aux (NumTok x:ts) = Just (NumE x, ts)
+        aux (OpTok op:ts) = 
+          case aux ts of
+            Nothing -> Nothing
+            Just (lft, leftOvers) -> 
+              case aux leftOvers of
+                Nothing -> Nothing
+                Just (rgt, rightOvers) -> Just (OpE op lft rgt, rightOvers)
+{-
+parseOld :: [Token] -> Expr
+parseOld [] = error "Cannot parse the empty string"
+parseOld (NumTok x:ts) = {- traceShow (NumTok x:ts) $-} NumE x 
+parseOld (OpTok op:ts) = 
+  let lft = parseOld ts
+      rgt = parseOld (drop (exprSize lft) ts)
+  in OpE op lft rgt
+  -}
 
 treeA, treeB, treeC, treeOne :: Expr
 treeA = NumE 3
@@ -79,6 +110,20 @@ evalOp Plus = (+)
 evalOp Minus = (-)
 evalOp Mult = (*)
 evalOp Div = (/)
+
+rep :: String -> Maybe Value
+rep str = 
+  case lexer str of
+    Nothing -> Nothing
+    Just tokens -> applyMaybe eval (parse tokens)
+
+main = do
+  str <- getLine
+  case rep str of
+    Just val -> putStrLn $ show val
+    Nothing -> putStrLn "Invalid line. Please try again."
+  main
+
 {-
 eval (OpE op lft rgt) = 
   let lftVal = eval lft
@@ -95,3 +140,4 @@ eval (OpE Mult lft rgt) = (eval lft) * (eval rgt)
 eval (OpE Minus lft rgt) = (eval lft) - (eval rgt)
 eval (OpE Div lft rgt) = (eval lft) / (eval rgt}
 -}
+
