@@ -15,13 +15,25 @@ inputOne = "- + 3 79 * 8 2"
 inputTwo = "* + 3 - 79 8 2"
 
 --tokensOne = [Minus, Plus, Number 3, Number 79, Mult, Number 8, Number 2]
+--
+--
+crossProduct xs ys = [(x,y) | x <- xs, y <- ys]
+
+monadProduct xs ys =
+  do x <- xs
+     y <- ys
+     return (x,y)
 
 lexer :: String -> Maybe [Token]
 lexer str = sequence $ map lexWord (words str)
 
 seqMaybe :: [Maybe a] -> Maybe [a]
 seqMaybe [] = Just []
-seqMaybe (x:xs) = 
+seqMaybe (x:xs) = do
+  val <- x
+  xsVals <- seqMaybe xs
+  return (val:xsVals)
+seqMaybeOld (x:xs) = 
   case (x,seqMaybe xs) of
     (Just val, Just xsVals) -> Just (val:xsVals)
     _ -> Nothing
@@ -31,7 +43,9 @@ lexWord "+" = Just $ OpTok Plus
 lexWord "-" = Just $ OpTok Minus
 lexWord "*" = Just $ OpTok Mult
 lexWord "/" = Just $ OpTok Div
-lexWord str = applyMaybe NumTok (readMaybe str)
+lexWord str = 
+  do intVal <- readMaybe str
+     Just $ NumTok intVal
 
 applyMaybe :: (a -> b) -> Maybe a -> Maybe b
 applyMaybe f Nothing = Nothing
@@ -67,21 +81,25 @@ unsafeParse toks =
 
 parse :: [Token] -> Maybe Expr
 parse toks = 
-  case aux toks of
-    Just (expr, []) -> Just expr
-    Just (expr, toks) -> Nothing -- error $ "Too many tokens: " ++ show toks
-    Nothing -> Nothing
+  do (expr, toks) <- aux toks
+     case toks of
+        [] -> Just expr
+        _ -> Nothing -- error $ "Too many tokens: " ++ show toks
   where aux :: [Token] -> Maybe (Expr, [Token])
         aux [] = Nothing -- error "Cannot parse the empty string"
         aux (NumTok x:ts) = Just (NumE x, ts)
         aux (OpTok op:ts) = 
+          do (lft, leftOvers) <- aux ts
+             (rgt, rightOvers) <- aux leftOvers
+             return (OpE op lft rgt, rightOvers)
+{-
           case aux ts of
             Nothing -> Nothing
             Just (lft, leftOvers) -> 
               case aux leftOvers of
                 Nothing -> Nothing
                 Just (rgt, rightOvers) -> Just (OpE op lft rgt, rightOvers)
-{-
+
 parseOld :: [Token] -> Expr
 parseOld [] = error "Cannot parse the empty string"
 parseOld (NumTok x:ts) = {- traceShow (NumTok x:ts) $-} NumE x 
