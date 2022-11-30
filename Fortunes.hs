@@ -46,12 +46,11 @@ main =
      then putStrLn $ usageInfo "Usage: Fortunes [options] [file]" options
      else do
        index <- getStart flags
-       let n = getNum flags
-       (chooseAction flags) n index fortunes
+       (chooseAction flags) index fortunes
 
-chooseAction :: [Flag] -> Int -> Int -> [String] -> IO ()
+chooseAction :: [Flag] -> Int -> [String] -> IO ()
 chooseAction flags 
-  | Once `elem` flags = tellFortunesOnce
+  | Once `elem` flags = tellFortunesOnce (getNum flags)
   | otherwise = tellFortune 
 
 getFortunes :: Int -> Int -> [String] -> [String]
@@ -63,13 +62,13 @@ tellFortunesOnce count index fortunes = do
      putStr "Your fortune is: "
      putStrLn $ unlines $ getFortunes count index fortunes
 
-tellFortune :: Int -> Int -> [String] -> IO ()
-tellFortune count index fortunes = do
+tellFortune :: Int -> [String] -> IO ()
+tellFortune index fortunes = do
      putStr "Your fortune is: "
-     putStrLn $ unlines $ getFortunes count index fortunes
+     putStrLn $ unlines $ getFortunes 1 index fortunes
      answer <- prompt "Would you like another"
      if map toLower answer `elem` ["yes", "okay", "y", "si", "yeah", "sure", "1"]
-     then tellFortune count (index+count) fortunes 
+     then tellFortune (index+1) fortunes 
      else return ()
 
 prompt :: String -> IO String
